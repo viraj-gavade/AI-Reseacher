@@ -10,3 +10,7 @@ export { ChatMessage } from './chat/ChatMessage';
 
 // Upload Components
 export { PDFUpload } from './upload/PDFUpload';
+
+// Auth Components
+export { default as AuthForm } from './auth/AuthForm';
+export { default as AppLoading } from './auth/AppLoading';

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ApiResponse, ChatResponse, UploadResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000/api'; // Change this to your actual API URL
+const API_BASE_URL = '/api/v1'; // Use proxy path instead of full URL
 
 // Create axios instance with default config
 const api = axios.create({
@@ -12,28 +12,29 @@ const api = axios.create({
   },
 });
 
-// Simulate network delay for demo purposes
-const simulateDelay = (ms: number = 1000) => 
-  new Promise(resolve => setTimeout(resolve, ms));
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const chatApi = {
   async sendMessage(message: string): Promise<ApiResponse<ChatResponse>> {
     try {
-      // Simulate API call
-      await simulateDelay(800);
+      // Real API call to FastAPI backend
+      const response = await api.post('/chat/message', { message });
       
-      // Dummy response - replace with actual API call
-      // const response = await api.post('/chat', { message });
-      
-      // Mock response for demo
-      const mockResponse: ChatResponse = {
-        message: `I received your message: "${message}". This is a demo response from the chat API.`,
-        timestamp: new Date().toISOString(),
-      };
-
       return {
         success: true,
-        data: mockResponse,
+        data: response.data.data,
       };
     } catch (error) {
       console.error('Chat API error:', error);
@@ -65,25 +66,23 @@ export const uploadApi = {
         };
       }
 
-      // Simulate upload progress
-      await simulateDelay(1500);
-
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
 
-      // Dummy response - replace with actual API call
-      // const response = await api.post('/upload', formData, {
-      //   headers: {
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      // });
+      // Real API call to FastAPI backend
+      const response = await api.post('/uploads/pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-      // Mock response for demo
+      // Map FastAPI response to frontend format
+      const backendResponse = response.data;
       const mockResponse: UploadResponse = {
-        fileId: `file_${Date.now()}`,
-        fileName: file.name,
-        message: `Successfully uploaded ${file.name}`,
+        fileId: backendResponse.file_id,
+        fileName: backendResponse.original_filename,
+        message: `Successfully uploaded ${backendResponse.original_filename}`,
       };
 
       return {

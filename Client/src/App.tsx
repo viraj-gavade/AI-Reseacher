@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
-import { MessageCircle, Upload as UploadIcon, Moon, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { MessageCircle, Upload as UploadIcon, Moon, Sun, LogOut } from 'lucide-react';
 import { ChatInterface } from './components/chat/ChatInterface';
 import { PDFUpload } from './components/upload/PDFUpload';
 import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import AuthForm from './components/auth/AuthForm';
+import AppLoading from './components/auth/AppLoading';
 import type { UploadedFile } from './types';
 
-function App() {
+// Main app content component (only renders when authenticated)
+const MainApp = () => {
   const [activeTab, setActiveTab] = useState<'chat' | 'upload'>('chat');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const { user, logout } = useAuth();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -40,6 +46,11 @@ function App() {
             </div>
             
             <div className="flex items-center space-x-2">
+              {/* User info */}
+              <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
+                <span>Welcome, {user?.full_name || user?.username}</span>
+              </div>
+              
               {/* Tab Navigation for Mobile */}
               <div className="flex sm:hidden">
                 <Button
@@ -62,6 +73,15 @@ function App() {
                 size="icon"
                 onClick={toggleDarkMode}
                 icon={isDarkMode ? Sun : Moon}
+              />
+              
+              {/* Logout button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                icon={LogOut}
+                className="text-destructive hover:text-destructive"
               />
             </div>
           </div>
@@ -156,6 +176,30 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+};
+
+// Auth wrapper component
+const AuthenticatedApp = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <AppLoading />;
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
+  return <MainApp />;
+};
+
+// Root App component
+function App() {
+  return (
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
   );
 }
 
